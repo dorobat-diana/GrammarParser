@@ -21,9 +21,7 @@ class LL1Parser:
                 for production in productions:
                     current_first = self.first_of_sequence(production)
                     before_update = self.first_sets[non_terminal].copy()
-                    self.first_sets[non_terminal].update(current_first - {"e"})
-                    if "e" in current_first:
-                        self.first_sets[non_terminal].add("e")
+                    self.first_sets[non_terminal].update(current_first )
                     if before_update != self.first_sets[non_terminal]:
                         changed = True
 
@@ -60,12 +58,9 @@ class LL1Parser:
                             rest = production[i + 1:]
                             before_update = self.follow_sets[symbol].copy()
                             if rest.isupper():
-
                                 first_rest = self.first_sets[rest] - {"e"}
-
                                 # Add FIRST(rest) - {e} to FOLLOW(symbol)
                                 self.follow_sets[symbol].update(first_rest)
-
                                 # If ε is in FIRST(rest) or rest is empty, add FOLLOW(non_terminal)
                                 if not rest or "e" in self.first_sets[rest]:
                                     self.follow_sets[symbol].update(self.follow_sets[non_terminal])
