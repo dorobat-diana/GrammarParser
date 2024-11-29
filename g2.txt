@@ -1,0 +1,25 @@
+Non-terminals: program decllist declaration type arraydecl cmpdstmt stmtlist stmt simplstmt structstmt assignstmt expression term factor iostmt ifstmt whilestmt forstmt condition returnstmt
+Terminals: \n " " = + - * / % ( ) { } [ ] input print if( else while( for( return int string bool char float array identifier relation constant
+Productions:
+program -> decllist \n cmpdstmt \n
+decllist -> declaration | declaration \n decllist
+declaration -> type " " identifier \n
+type -> int | string | bool | char | float
+arraydecl -> type " " array [ element ] \n
+cmpdstmt -> \n stmtlist \n
+stmtlist -> stmt | stmt \n stmtlist
+stmt -> simplstmt | structstmt
+simplstmt -> assignstmt | iostmt | returnstmt
+assignstmt -> identifier = expression
+expression -> expression + term | expression - term | term
+term -> term * factor | term / factor | term % factor | factor
+factor -> ( expression ) | identifier | constant
+iostmt -> input ( identifier ) | print ( identifier )
+structstmt -> cmpdstmt | ifstmt | whilestmt | forstmt
+ifstmt -> if( condition ) { cmpdstmt } | if( condition ) { cmpdstmt } else { cmpdstmt }
+whilestmt -> while( condition ) { cmpdstmt }
+forstmt -> for( expression ; condition ; expression ) { cmpdstmt }
+condition -> expression relation expression
+returnstmt -> return expression \n
+relation -> < | <= | = | >= | > | !=
+Start: program
