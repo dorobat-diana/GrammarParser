@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+from tabulate import tabulate
 from Grammar import Grammar
 
 
@@ -71,6 +71,88 @@ class LL1Parser:
                             if before_update != self.follow_sets[symbol]:
                                 changed = True
 
+    def construct_parse_table(self):
+        # Initialize table with "err"
+        terminals = list(self.grammar.terminals) + ["$"]
+        non_terminals = list(self.grammar.non_terminals)
+        self.parse_table = defaultdict(lambda: defaultdict(lambda: "err"))
+
+        # Set ($, $) to "acc"
+        self.parse_table["$"]["$"] = "acc"
+
+        # Set (a, a) to "pop" for terminals
+        for terminal in self.grammar.terminals:
+            self.parse_table[terminal][terminal] = "pop"
+
+        # Process productions
+        for non_terminal, productions in self.grammar.productions.items():
+            for i, production in enumerate(productions, start=1):
+                first_set = self.first_of_sequence(production)
+
+                # Add rules for FIRST(alpha)
+                for terminal in first_set - {"e"}:
+                    self.parse_table[non_terminal][terminal] = (non_terminal + " -> " + production)
+
+                # Add rules for FOLLOW(non_terminal) if ε is in FIRST(alpha)
+                if "e" in first_set:
+                    self.parse_table[non_terminal]["$"] = (non_terminal + " -> " + production)
+                    for terminal in self.follow_sets[non_terminal]:
+                        self.parse_table[non_terminal][terminal] = (non_terminal + " -> " + production)
+
+    def parse_tokens(self, _tokens):
+        stack = ["$", self.grammar.start_symbol]
+        pointer = 0  # Points to the current token
+        print("\nParsing Steps:")
+        print(f"{'Stack':<30} {'Input':<30} {'Action'}")
+
+        while stack:
+            top = stack.pop()
+            current_token = _tokens[pointer]
+
+            # Print current state
+            print(f"{' '.join(stack):<30} {' '.join(_tokens[pointer:]):<30}", end=" ")
+
+            if top == current_token == "$":
+                print("ACCEPT")
+                return True  # Successfully parsed
+            elif top == current_token:
+                print(f"MATCH '{current_token}'")
+                pointer += 1  # Move to the next token
+            elif top.isupper():  # Non-terminal
+                production = self.parse_table[top][current_token]
+                if production == "err":
+                    print(f"ERROR: No rule for {top} -> {current_token}")
+                    return False
+                print(f"EXPAND {production}")
+                _, rhs = production.split("->")
+                rhs = rhs.strip()
+                if rhs != "e":  # Don't push ε (empty string) to the stack
+                    stack.extend(reversed(list(rhs)))
+            else:
+                print(f"ERROR: Unexpected token '{current_token}'")
+                return False
+
+        print("ERROR: Stack not empty but input exhausted")
+        return False
+
+    def print_parse_table(self):
+        # Gather headers
+        terminals = list(self.grammar.terminals) + ["$"]
+        non_terminals = list(self.grammar.non_terminals)
+        headers = [""] + terminals  # First column for non-terminals
+
+        # Construct rows
+        rows = []
+        for non_terminal in non_terminals + ["$"]:
+            row = [non_terminal]  # Row starts with the non-terminal
+            for terminal in terminals:
+                value = self.parse_table[non_terminal][terminal]
+                row.append(value)
+            rows.append(row)
+
+        # Print table
+        print(tabulate(rows, headers, tablefmt="grid"))
+
     def print_first_sets(self):
         print("First Sets:")
         for non_terminal, first in sorted(self.first_sets.items()):
@@ -93,5 +175,13 @@ parser.compute_follow_sets()
 parser.print_first_sets()
 parser.print_follow_sets()
 
-# Example parsing
-tokens = ["a", "*", "(", "a", "+", "a", ")", "$"]  # Example token stream
+parser.construct_parse_table()
+parser.print_parse_table()
+tokens = ["a", "*", "(", "a", "+", "a", ")", "$"]
+success = parser.parse_tokens(tokens)
+
+if success:
+    print("Input successfully parsed!")
+else:
+    print("Input rejected.")
+
