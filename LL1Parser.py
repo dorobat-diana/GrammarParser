@@ -1,6 +1,7 @@
 from collections import defaultdict
 from tabulate import tabulate
 from Grammar import Grammar
+from ParserOutput import ParserOutput
 
 
 class LL1Parser:
@@ -8,6 +9,7 @@ class LL1Parser:
         self.grammar = grammar
         self.first_sets = defaultdict(set)
         self.follow_sets = defaultdict(set)
+        self.parser_output = ParserOutput()
 
     def compute_first_sets(self):
         # Initialize FIRST sets
@@ -124,8 +126,9 @@ class LL1Parser:
                     print(f"ERROR: No rule for {top} -> {current_token}")
                     return False
                 print(f"EXPAND {production}")
-                _, rhs = production.split("->")
+                parent, rhs = production.split("->")
                 rhs = rhs.strip()
+                self.parser_output.add_node(parent,rhs)
                 if rhs != "e":  # Don't push ε (empty string) to the stack
                     stack.extend(reversed(list(rhs)))
             else:
@@ -164,24 +167,4 @@ class LL1Parser:
             print(f"  {non_terminal}: {follow}")
 
 
-
-# Example Usage
-g = Grammar("g1.txt")
-parser = LL1Parser(g)
-parser.compute_first_sets()
-parser.compute_follow_sets()
-
-# Print sets and parse table
-parser.print_first_sets()
-parser.print_follow_sets()
-
-parser.construct_parse_table()
-parser.print_parse_table()
-tokens = ["a", "*", "(", "a", "+", "a", ")", "$"]
-success = parser.parse_tokens(tokens)
-
-if success:
-    print("Input successfully parsed!")
-else:
-    print("Input rejected.")
 
