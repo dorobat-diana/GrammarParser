@@ -1,5 +1,5 @@
 Non-terminals: program decllist declaration type arraydecl cmpdstmt stmtlist stmt simplstmt structstmt assignstmt expression term factor iostmt ifstmt whilestmt forstmt condition returnstmt
-Terminals: \n " " = + - * / % ( ) { } [ ] input print if( else while( for( return int string bool char float array identifier relation constant
+Terminals: \n " " = + - * / % ( ) { } [ ] input print if( else while( for( return int string bool char float array identifier relation constant def
 Productions:
 program -> decllist \n cmpdstmt \n
 decllist -> declaration | declaration \n decllist

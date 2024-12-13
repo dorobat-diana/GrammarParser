@@ -85,3 +85,13 @@ class Grammar:
 
     def print_cfg_check(self):
         print("Is the grammar context-free?", self.is_cfg())
+
+
+# Example usage:
+# g = Grammar("g1.txt")
+# g.print_productions()
+# g.print_terminals()
+# g.print_non_terminals()
+# g.print_productions_for_non_terminal("A")
+# g.print_productions_for_non_terminal("D")
+# g.print_cfg_check()

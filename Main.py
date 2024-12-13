@@ -5,21 +5,14 @@ from ParserOutput import ParserOutput
 
 g = Grammar("g1.txt")
 parser = LL1Parser(g)
-parser.compute_first_sets()
-parser.compute_follow_sets()
-
-# Print sets and parse table
-parser.print_first_sets()
-parser.print_follow_sets()
-
-parser.construct_parse_table()
-parser.print_parse_table()
 
 # Tokens to parse
 tokens = ["a", "*", "(", "a", "+", "a", ")", "$"]
 success = parser.parse_tokens(tokens)
+parser_output= ParserOutput(parser)
 if success:
     print("Input successfully parsed!")
-    parser.parser_output.print_tree()
+    parser_output.print_all()
+    parser_output.save_all_to_file("g1")
 else:
     print("Input rejected.")

@@ -1,15 +1,55 @@
 from collections import defaultdict
-from tabulate import tabulate
-from Grammar import Grammar
-from ParserOutput import ParserOutput
-
 
 class LL1Parser:
     def __init__(self, grammar):
         self.grammar = grammar
         self.first_sets = defaultdict(set)
         self.follow_sets = defaultdict(set)
-        self.parser_output = ParserOutput()
+        self.parsing_tree = []
+        self.node_index = 0
+        self.add_node("", "S")
+
+    def add_node(self, parent, children):
+        """
+        Adds nodes to the parsing tree as a table row.
+        :param parent: Parent symbol
+        :param children: List of children symbols (can be terminals or non-terminals)
+        """
+        parent_index = self.get_node_index(parent)
+
+        # Add children as nodes with parent references
+        last_sibling = None
+        for child in children:
+            self.node_index += 1
+            current_index = self.node_index
+
+            # Add the node with parent reference
+            self.parsing_tree.append({
+                "index": current_index,
+                "info": child,
+                "parent": parent_index,
+                "right_sibling": 0  # Default; updated below
+            })
+
+            # Update the right_sibling of the last sibling
+            if last_sibling is not None:
+                self.parsing_tree[last_sibling]["right_sibling"] = current_index-1
+
+            last_sibling = current_index
+
+    def get_node_index(self, info):
+        """Retrieve the index of a node based on its info."""
+        for node in self.parsing_tree:
+            if node["info"] == info.strip():
+                return node["index"]
+        return 0
+
+    def print_parsing_tree(self):
+        """Print the parsing tree as a table."""
+        print(f"{'Index':<10}{'Info':<15}{'Parent':<10}{'Right Sibling':<15}")
+        print("-" * 50)
+        for node in self.parsing_tree:
+            print(f"{node['index']:<10}{node['info']:<15}{node['parent']:<10}{node['right_sibling']:<15}")
 
     def compute_first_sets(self):
         # Initialize FIRST sets
@@ -23,7 +63,7 @@ class LL1Parser:
                 for production in productions:
                     current_first = self.first_of_sequence(production)
                     before_update = self.first_sets[non_terminal].copy()
-                    self.first_sets[non_terminal].update(current_first )
+                    self.first_sets[non_terminal].update(current_first)
                     if before_update != self.first_sets[non_terminal]:
                         changed = True
 
@@ -75,6 +115,8 @@ class LL1Parser:
 
     def construct_parse_table(self):
         # Initialize table with "err"
+        self.compute_first_sets()
+        self.compute_follow_sets()
         terminals = list(self.grammar.terminals) + ["$"]
         non_terminals = list(self.grammar.non_terminals)
         self.parse_table = defaultdict(lambda: defaultdict(lambda: "err"))
@@ -102,6 +144,7 @@ class LL1Parser:
                         self.parse_table[non_terminal][terminal] = (non_terminal + " -> " + production)
 
     def parse_tokens(self, _tokens):
+        self.construct_parse_table()
         stack = ["$", self.grammar.start_symbol]
         pointer = 0  # Points to the current token
         print("\nParsing Steps:")
@@ -128,7 +171,7 @@ class LL1Parser:
                 print(f"EXPAND {production}")
                 parent, rhs = production.split("->")
                 rhs = rhs.strip()
-                self.parser_output.add_node(parent,rhs)
+                self.add_node(parent, rhs)
                 if rhs != "e":  # Don't push ε (empty string) to the stack
                     stack.extend(reversed(list(rhs)))
             else:
@@ -137,34 +180,3 @@ class LL1Parser:
 
         print("ERROR: Stack not empty but input exhausted")
         return False
-
-    def print_parse_table(self):
-        # Gather headers
-        terminals = list(self.grammar.terminals) + ["$"]
-        non_terminals = list(self.grammar.non_terminals)
-        headers = [""] + terminals  # First column for non-terminals
-
-        # Construct rows
-        rows = []
-        for non_terminal in non_terminals + ["$"]:
-            row = [non_terminal]  # Row starts with the non-terminal
-            for terminal in terminals:
-                value = self.parse_table[non_terminal][terminal]
-                row.append(value)
-            rows.append(row)
-
-        # Print table
-        print(tabulate(rows, headers, tablefmt="grid"))
-
-    def print_first_sets(self):
-        print("First Sets:")
-        for non_terminal, first in sorted(self.first_sets.items()):
-            print(f"  {non_terminal}: {first}")
-
-    def print_follow_sets(self):
-        print("Follow Sets:")
-        for non_terminal, follow in sorted(self.follow_sets.items()):
-            print(f"  {non_terminal}: {follow}")
-
-
-
